@@ -1,0 +1,81 @@
+#!/bin/bash
+
+# Copyright (C) 2024, Octavio Alvarez.
+# LICENSE: AGPL-3.0-only
+
+set -e
+
++ () {
+    (set -x; "$@";)
+}
+
+ARGS_EXIST=1
+[ -z "${REPO_URL}" ] && {
+    echo
+    echo "REPO_URL environment variable not set."
+    echo "Set it to the git clone URL and export it."
+    echo "Example: export REPO_URL=https://example.net/some-repo/.git"
+    ARGS_EXIST=0
+}
+
+[ -z "${REPO_TAG}" ] && {
+    echo
+    echo "REPO_TAG environment variable not set."
+    echo "Set it to the tag in the git repository to compare with and export it."
+    echo "Example: export REPO_TAG=v1.2.3"
+    ARGS_EXIST=0
+}
+
+[ -z "${TARBALL_URL}" ] && {
+    echo
+    echo "TARBALL_URL environment variable not set."
+    echo "Set it to the tarball URL to validate and export it."
+    echo "Example: export TARBALL_URL=https://example.net/some-dir/tarball-v1.2.3.tar.gz"
+    ARGS_EXIST=0
+}
+
+[ "${ARGS_EXIST}" -eq "1" ] || exit 1
+
+echo "Removing content from previous run..."
++ rm -fr git-* tarball diff-*
+
+echo "Cloning git repository..."
+mkdir -p git-repo
++ git clone -b "${REPO_TAG}" --depth 1 "${REPO_URL}" git-repo
+
+echo "Fetching tarball and extracting..."
+mkdir -p tarball
++ wget -O - "${TARBALL_URL}" | tar xzf - -C tarball
+
+echo "Generating archive from git repository..."
+mkdir -p git-archive
++ git archive --remote=./git-repo/.git --format=tgz "${REPO_TAG}" | tar xzf - -C git-archive
+
+set +e
+
+echo "Calculating differences between the git repository and the generated archive..."
++ diff -u -r -x '.git' git-repo git-archive > diff-repo2archive
+
+echo "Calculating differences between the git repository and the tarball..."
+TARBALL_CONTENTS_DIR=tarball
+if [ "$(ls -1 tarball | wc -l)" -eq 1 ]; then
+    TARBALL_CONTENTS_DIR=tarball/$(ls -1 tarball)
+fi
+
++ diff -u -r -x '.git' git-repo "${TARBALL_CONTENTS_DIR}" > diff-repo2tarball
+
+echo
+echo ===== Differences from git repository to generated archive:
+if [ -s diff-repo2archive ]; then
+    cat diff-repo2archive
+else
+    echo None found.
+fi
+
+echo
+echo ===== Differences from git repository to published tarball:
+if [ -s diff-repo2tarball ]; then
+    cat diff-repo2tarball
+else
+    echo None found.
+fi
