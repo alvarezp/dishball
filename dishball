@@ -36,8 +36,17 @@ ARGS_EXIST=1
 
 [ "${ARGS_EXIST}" -eq "1" ] || exit 1
 
-echo "Removing content from previous run..."
-+ rm -fr git-* tarball diff-*
+EXISTING_DATA=0
+[ -e "git-tarball" -o -e "git-archive" -o -e "tarball" -o -e "diff-repo2tarball" -o -e "diff-repo2archive" ] && {
+    echo
+    echo "Previous content exist that would be overwritten:"
+    echo "git-tarball git-archive tarball diff-repo2tarball diff-repo2archive"
+    echo "Remove it before continuing using:"
+    echo "rm -fr git-tarball git-archive tarball diff-repo2tarball diff-repo2archive"
+    EXISTING_DATA=1
+}
+
+[ "${EXISTING_DATA}" -eq "0" ] || exit 1
 
 echo "Cloning git repository..."
 mkdir -p git-repo
