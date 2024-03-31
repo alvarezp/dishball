@@ -37,12 +37,12 @@ ARGS_EXIST=1
 [ "${ARGS_EXIST}" -eq "1" ] || exit 1
 
 EXISTING_DATA=0
-[ -e "git-tarball" -o -e "git-archive" -o -e "tarball" -o -e "diff-repo2tarball" -o -e "diff-repo2archive" ] && {
+[ -e "git-repo" -o -e "git-archive" -o -e "tarball" -o -e "diff-repo2tarball" -o -e "diff-repo2archive" ] && {
     echo
     echo "Previous content exist that would be overwritten:"
-    echo "git-tarball git-archive tarball diff-repo2tarball diff-repo2archive"
+    echo "git-repo git-archive tarball diff-repo2tarball diff-repo2archive"
     echo "Remove it before continuing using:"
-    echo "rm -fr git-tarball git-archive tarball diff-repo2tarball diff-repo2archive"
+    echo "rm -fr git-repo git-archive tarball diff-repo2tarball diff-repo2archive"
     EXISTING_DATA=1
 }
 
